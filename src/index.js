@@ -1,13 +1,14 @@
 // index.js is used to setup and configure your bot
 
 // Import required packages
-import express, { json } from "express";
+import express from 'express';
+import bodyParser from 'body-parser';
+const { json } = bodyParser;
 
 // Import required bot services.
 // See https://aka.ms/bot-services to learn more about the different parts of a bot.
 import { CloudAdapter, ConfigurationServiceClientCredentialFactory, ConfigurationBotFrameworkAuthentication } from "botbuilder";
-import pkg from './searchApp.js';
-const { SearchApp } = pkg;
+import { SearchApp } from './searchApp.js'; // Correct import
 import config from "./config.js";
 
 // Create adapter.
@@ -45,14 +46,16 @@ const server = expressApp.listen(process.env.port || process.env.PORT || 3978, (
 });
 
 // Listen for incoming requests.
-expressApp.post("/api/messages", async (req, res) => {
+expressApp.post('/api/messages', async (req, res) => {
+  console.log('Received a message');
   await adapter.process(req, res, async (context) => {
+    console.log('Processing message');
     await searchApp.run(context);
   });
 });
 
 // Gracefully shutdown HTTP server
-["exit", "uncaughtException", "SIGINT", "SIGTERM", "SIGUSR1", "SIGUSR2"].forEach((event) => {
+['exit', 'uncaughtException', 'SIGINT', 'SIGTERM', 'SIGUSR1', 'SIGUSR2'].forEach((event) => {
   process.on(event, () => {
     server.close();
   });

@@ -1,11 +1,10 @@
-require('dotenv').config();
-const { TeamsActivityHandler, CardFactory } = require('botbuilder');
-const axios = require('axios');
-const ACData = require('adaptivecards-templating');
-const helloWorldCard = require('./adaptiveCards/helloWorldCard.json');
+import 'dotenv/config';
+import { TeamsActivityHandler, CardFactory } from 'botbuilder';
+import axios from 'axios';
+import ACData from 'adaptivecards-templating';
 
 const openaiApiKey = process.env.OPENAI_API_KEY;  // Securely get the API key
- 
+
 async function fetchOpenAIResponse(userMessage) {
     try {
         const response = await axios.post(
@@ -23,7 +22,7 @@ async function fetchOpenAIResponse(userMessage) {
                 },
             }
         );
- 
+
         return response.data.choices[0].message.content;
     } catch (error) {
         console.error("Error calling OpenAI API:", error);
@@ -31,67 +30,21 @@ async function fetchOpenAIResponse(userMessage) {
     }
 }
 
-class SearchApp extends TeamsActivityHandler {
+export class SearchApp extends TeamsActivityHandler {
   constructor() {
     super();
+    // Add your bot's event handlers here
   }
 
-  async handleTeamsMessagingExtensionQuery(context, query) {
-    const searchQuery = query.parameters[0].value;
+  async run(context) {
+    const userMessage = context.activity.text;
+    const responseMessage = await fetchOpenAIResponse(userMessage);
+    await context.sendActivity(responseMessage);
+  }
 
-    if (!searchQuery) {
-      const welcomeCard = CardFactory.heroCard(
-        "Welcome to Response Assistant! 👋",
-        "Paste any message you received above and I'll help you craft the perfect response ✨"
-      );
-      return {
-        composeExtension: {
-          type: "result",
-          attachmentLayout: "list",
-          attachments: [welcomeCard],
-        },
-      };
-    }
-
-    if (searchQuery.length < 2) {
-      return {
-        composeExtension: {
-          type: "result",
-          attachmentLayout: "list",
-          attachments: [],
-        },
-      };
-    }
-
-    const response = await axios.get(
-      `${process.env.NPM_REGISTRY_URL}/-/v1/search?${querystring.stringify({
-        text: searchQuery,
-        size: 8,
-      })}`
-    );
-
-    const attachments = [];
-    response.data.objects.forEach((obj) => {
-      const template = new ACData.Template(helloWorldCard);
-      const card = template.expand({
-        $root: {
-          name: obj.package.name,
-          description: obj.package.description,
-        },
-      });
-      const preview = CardFactory.heroCard(obj.package.name);
-      const attachment = { ...CardFactory.adaptiveCard(card), preview };
-      attachments.push(attachment);
-    });
-
-    return {
-      composeExtension: {
-        type: "result",
-        attachmentLayout: "list",
-        attachments: attachments,
-      },
-    };
+  async sendHelloWorldCard(context) {
+    const helloWorldCard = await import('./adaptiveCards/helloWorldCard.json', { assert: { type: 'json' } });
+    const card = CardFactory.adaptiveCard(helloWorldCard.default);
+    await context.sendActivity({ attachments: [card] });
   }
 }
-
-module.exports = { SearchApp };

@@ -25,7 +25,7 @@
     "bots": [],
     "composeExtensions": [
         {
-            "botId": "ca78401d-6898-418f-b40c-8743f6e83f6c",
+            "botId": "96c4d634-133f-4a99-bc7a-56b25a167393",
             "commands": [
                 {
                     "id": "searchQuery",
